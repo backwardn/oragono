@@ -40,6 +40,18 @@ func TestCasefoldChannel(t *testing.T) {
 			channel: "#",
 			folded:  "#",
 		},
+		{
+			channel: "#mEaT🍖",
+			folded:  "#meat🍖",
+		},
+		{
+			channel: "#🎆",
+			folded:  "#🎆",
+		},
+		{
+			channel: "#cOmp💻uterS",
+			folded:  "#comp💻uters",
+		},
 	}
 
 	for _, errCase := range []string{
@@ -106,5 +118,15 @@ func TestCasefoldName(t *testing.T) {
 				t.Errorf("expected [%v] to be [%v]", res, tt.folded)
 			}
 		})
+	}
+}
+
+func TestIsEmoji(t *testing.T) {
+	if isEmoji('a') {
+		t.Errorf("'a' is not an emoji")
+	}
+
+	if !isEmoji('🐬') {
+		t.Errorf("the dolphin emoji is an emoji")
 	}
 }

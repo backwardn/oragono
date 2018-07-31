@@ -6,6 +6,7 @@
 package irc
 
 import (
+	"bytes"
 	"strings"
 
 	"golang.org/x/text/secure/precis"
@@ -15,8 +16,7 @@ const (
 	casemappingName = "rfc8265"
 )
 
-// Casefold returns a casefolded string, without doing any name or channel character checks.
-func Casefold(str string) (string, error) {
+func casefoldInternal(str string) (string, error) {
 	var err error
 	oldStr := str
 	// follow the stabilizing rules laid out here:
@@ -35,6 +35,35 @@ func Casefold(str string) (string, error) {
 		return "", errCouldNotStabilize
 	}
 	return str, nil
+}
+
+func isEmoji(x rune) bool {
+	return emojiSet[x]
+}
+
+// Casefold returns a casefolded string, without doing any name or channel character checks.
+func Casefold(str string) (string, error) {
+	var result bytes.Buffer
+	var curWord bytes.Buffer
+	for _, r := range str {
+		if isEmoji(r) {
+			prevWord, err := casefoldInternal(curWord.String())
+			if err != nil {
+				return "", err
+			}
+			result.WriteString(prevWord)
+			curWord.Reset()
+			result.WriteRune(r)
+		} else {
+			curWord.WriteRune(r)
+		}
+	}
+	prevWord, err := casefoldInternal(curWord.String())
+	if err != nil {
+		return "", err
+	}
+	result.WriteString(prevWord)
+	return result.String(), nil
 }
 
 // CasefoldChannel returns a casefolded version of a channel name.
